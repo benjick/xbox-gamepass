@@ -6,11 +6,18 @@ import { Game } from "../functions/src";
 import { db } from "./firebase";
 import { useMemo } from "react";
 
-export const sorts = [
+export const sorts2 = [
   "opencritic.percentRecommended",
   "opencritic.averageScore",
   "opencritic.medianScore",
 ];
+
+export const sorts = {
+  name: "Name",
+  "opencritic.percentRecommended": "% Recommended",
+  "opencritic.averageScore": "Average score",
+  "opencritic.medianScore": "Median score",
+};
 
 interface State {
   games: Game[];
@@ -30,7 +37,7 @@ export const useStore = create<State>(
       games: [],
       hidden: [],
       showHidden: false,
-      sort: sorts[0],
+      sort: Object.keys(sorts)[0],
       category: undefined,
       sorts,
       setSort: async (sort) => {

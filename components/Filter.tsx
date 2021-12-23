@@ -1,19 +1,22 @@
 import { SortKey, sorts, useCategories, useStore } from "../src/state";
 
-export const Filter: React.FC = () => {
-  const { setSort, sort, showHidden, setShowHidden } = useStore((state) => ({
+function useFilter() {
+  return useStore((state) => ({
     sort: state.sort,
     setSort: state.setSort,
     showHidden: state.showHidden,
     setShowHidden: state.setShowHidden,
   }));
+}
 
+export const Filter: React.FC = () => {
+  const { setSort, sort, showHidden, setShowHidden } = useFilter();
   const { categories, setCategory, category } = useCategories();
 
   return (
     <div className="p-3">
       <div className="flex flex-row">
-        <div className="w-64">
+        <div className="w-64 mr-4">
           <label
             htmlFor="category"
             className="block text-sm font-medium text-gray-700"

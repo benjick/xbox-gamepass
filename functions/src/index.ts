@@ -20,6 +20,28 @@ enum GamesLists {
   EA_PLAY = "b8900d09-a491-44cc-916e-32b5acae621b",
 }
 
+interface GameBeforeOpenCritic {
+  id: string;
+  name: string;
+  images: string[];
+  category: string;
+  categories: string[];
+}
+
+interface OpenCriticData {
+  opencritic: {
+    id: number;
+    percentRecommended: number;
+    averageScore: number;
+    medianScore: number;
+  };
+}
+
+export type Game = GameBeforeOpenCritic &
+  OpenCriticData & {
+    source: string;
+  };
+
 async function getGamesList(list: GamesLists) {
   const res = await fetch(
     `https://catalog.gamepass.com/sigls/v2?id=${list}&language=en-us&market=${market}`
@@ -31,11 +53,11 @@ async function getGamesList(list: GamesLists) {
   return gameIds;
 }
 
-async function getGames(list: string[]) {
+async function getGames(list: string[]): Promise<GameBeforeOpenCritic[]> {
   const res = await fetch(
-    `https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=${list.join(
-      ","
-    )}&market=${market}&languages=en-us&MS-CV=DGU1mcuYo0WMMp+F.1`
+    `https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=${list
+      .slice(0, 10) // only 10 games from each list for now (faster for testing)
+      .join(",")}&market=${market}&languages=en-us&MS-CV=DGU1mcuYo0WMMp+F.1`
   );
   const gamesjson = (await res.json()) as {
     Products: Product[];
@@ -48,6 +70,8 @@ async function getGames(list: string[]) {
       id: game.ProductId,
       name: Properties.ProductTitle,
       images: Properties.Images.map((image) => "https:" + image.Uri),
+      category: game.Properties.Category,
+      categories: game.Properties.Categories,
     };
   });
   return games;
@@ -105,11 +129,15 @@ export const onGameCreate = functions.firestore
     console.log("created", context.params, change.data().name);
     const data = change.data();
     const game = await findOpenCriticRating(data.name);
-    await firestore.collection("games").doc(data.id).update({
-      opencriticPercentRecommended: game.percentRecommended,
-      opencriticAverageScore: game.averageScore,
-      opencriticMedianScore: game.medianScore,
-    });
+    const openCriticData: OpenCriticData = {
+      opencritic: {
+        id: game.id,
+        percentRecommended: game.percentRecommended,
+        averageScore: game.averageScore,
+        medianScore: game.medianScore,
+      },
+    };
+    await firestore.collection("games").doc(data.id).update(openCriticData);
 
     return Promise.resolve();
   });

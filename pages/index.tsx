@@ -4,15 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import styles from "../styles/Home.module.css";
 import { query, orderBy, getDocs, collection } from "firebase/firestore";
 import { db } from "../firebase";
+import { Game } from "../functions/src";
 
-const sorts = [
-  "opencriticPercentRecommended",
-  "opencriticAverageScore",
-  "opencriticMedianScore",
-];
+const sorts = ["percentRecommended", "averageScore", "medianScore"];
 
 const Home: NextPage = () => {
-  const [games, setGames] = useState<any[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [sort, setSort] = useState(sorts[0]);
 
@@ -20,7 +17,7 @@ const Home: NextPage = () => {
   useEffect(() => {
     const ref = collection(db, "games");
 
-    const q = query(ref, orderBy(sort, "desc"));
+    const q = query(ref, orderBy(`opencritic.${sort}`, "desc"));
     getDocs(q).then((querySnapshot) => {
       const games: any[] = [];
       querySnapshot.forEach((doc) => {
@@ -32,6 +29,10 @@ const Home: NextPage = () => {
 
   function hideGame(id: string) {
     setHidden((state) => [...state, id]);
+  }
+
+  function round(n: number) {
+    return Math.max(0, Math.round(n));
   }
 
   const filteredGames = useMemo(() => {
@@ -55,22 +56,24 @@ const Home: NextPage = () => {
           <tr>
             <th>Image</th>
             <th>Game</th>
-            <th>Recommended (OC)</th>
-            <th>Average score (OC)</th>
-            <th>Median score (OC)</th>
+            <th>Recommended</th>
+            <th>Average score</th>
+            <th>Median score</th>
+            <th>Category</th>
             <th>Hide</th>
           </tr>
         </thead>
         <tbody>
-          {filteredGames.map((game: any) => (
+          {filteredGames.map((game) => (
             <tr key={game.id}>
               <td>
                 <img src={game.images[0]} style={{ width: 100 }} />
               </td>
               <td>{game.name}</td>
-              <td>{Math.round(game.opencriticPercentRecommended)}%</td>
-              <td>{Math.round(game.opencriticAverageScore)}%</td>
-              <td>{Math.round(game.opencriticMedianScore)}%</td>
+              <td>{round(game.opencritic.percentRecommended)}%</td>
+              <td>{round(game.opencritic.averageScore)}%</td>
+              <td>{round(game.opencritic.medianScore)}%</td>
+              <td>{game.category}</td>
               <td>
                 <button onClick={() => hideGame(game.id)}>Hide game</button>
               </td>

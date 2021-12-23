@@ -1,6 +1,7 @@
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import create from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, combine } from "zustand/middleware";
+import produce from "immer";
 import sorter from "sort-nested-json";
 import { Game } from "../functions/src";
 import { db } from "./firebase";
@@ -15,28 +16,19 @@ export const sorts = {
 
 export type SortKey = keyof typeof sorts;
 
-interface State {
-  games: Game[];
-  hidden: string[];
-  showHidden: boolean;
-  sort: SortKey;
-  category?: string;
-  getGames: () => void;
-  setSort: (sort: SortKey) => void;
-  hideGame: (id: string) => void;
-  setCategory: (category: string) => void;
-}
+const initialState = {
+  games: [] as Game[],
+  hidden: [] as string[],
+  showHidden: false,
+  sort: Object.keys(sorts)[0] as SortKey,
+  category: "ALL",
+  sorts,
+};
 
-export const useStore = create<State>(
+export const useStore = create(
   persist(
-    (set, get) => ({
-      games: [],
-      hidden: [],
-      showHidden: false,
-      sort: Object.keys(sorts)[0] as SortKey,
-      category: "ALL",
-      sorts,
-      setSort: async (sort) => {
+    combine(initialState, (set, get) => ({
+      setSort: async (sort: SortKey) => {
         set({ sort });
       },
       getGames: async () => {
@@ -50,15 +42,30 @@ export const useStore = create<State>(
           set({ games });
         });
       },
-      hideGame: async (id) => {
-        set({
-          hidden: [...get().hidden, id],
-        });
+      hideGame: async (id: string) => {
+        set(
+          produce((state) => {
+            state.hidden.push(id);
+          })
+        );
       },
-      setCategory: async (category) => {
+      unhideGame: async (id: string) => {
+        const index = get().hidden.findIndex((h) => h === id);
+        if (index >= 0) {
+          set(
+            produce((state) => {
+              state.hidden.splice(id, 1);
+            })
+          );
+        }
+      },
+      setShowHidden(showHidden: boolean) {
+        set({ showHidden });
+      },
+      setCategory: async (category: string) => {
         set({ category });
       },
-    }),
+    })),
     {
       name: "xbox-gamepass",
       partialize: (state) => ({
@@ -66,6 +73,7 @@ export const useStore = create<State>(
         sort: state.sort,
         hidden: state.hidden,
         category: state.category,
+        showHidden: state.showHidden,
       }),
     }
   )

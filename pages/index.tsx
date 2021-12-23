@@ -1,43 +1,20 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import styles from "../styles/Home.module.css";
-import { query, orderBy, getDocs, collection } from "firebase/firestore";
-import { db } from "../firebase";
-import { Game } from "../functions/src";
-
-const sorts = ["percentRecommended", "averageScore", "medianScore"];
+import { sorts, useGames, useStore } from "../src/state";
 
 const Home: NextPage = () => {
-  const [games, setGames] = useState<Game[]>([]);
-  const [hidden, setHidden] = useState<string[]>([]);
-  const [sort, setSort] = useState(sorts[0]);
+  const { setSort, hideGame } = useStore((state) => ({
+    setSort: state.setSort,
+    hideGame: state.hideGame,
+  }));
 
-  console.log("games", games);
-  useEffect(() => {
-    const ref = collection(db, "games");
-
-    const q = query(ref, orderBy(`opencritic.${sort}`, "desc"));
-    getDocs(q).then((querySnapshot) => {
-      const games: any[] = [];
-      querySnapshot.forEach((doc) => {
-        games.push(doc.data());
-      });
-      setGames(games);
-    });
-  }, [sort]);
-
-  function hideGame(id: string) {
-    setHidden((state) => [...state, id]);
-  }
+  const games = useGames();
 
   function round(n: number) {
     return Math.max(0, Math.round(n));
   }
-
-  const filteredGames = useMemo(() => {
-    return games.filter((game) => !hidden.includes(game.id));
-  }, [games, hidden]);
 
   return (
     <div className={styles.container}>
@@ -64,10 +41,10 @@ const Home: NextPage = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredGames.map((game) => (
+          {games.map((game: any) => (
             <tr key={game.id}>
               <td>
-                <img src={game.images[0]} style={{ width: 100 }} />
+                <img src={game.images[0]} style={{ width: 100 }} alt="game" />
               </td>
               <td>{game.name}</td>
               <td>{round(game.opencritic.percentRecommended)}%</td>

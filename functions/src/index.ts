@@ -1,8 +1,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import { Product } from "../../types/Products";
-import { OpenCriticGame } from "../../types/OpenCritic";
-import fetch from "node-fetch";
+import { GameBeforeOpenCritic, getGames, getGamesList } from "./gamepass";
+import { findOpenCriticRating } from "./opencritic";
 
 admin.initializeApp();
 
@@ -12,22 +11,12 @@ if (process.env.USE_EMULATOR) {
   process.env["FIRESTORE_EMULATOR_HOST"] = "localhost:8080";
 }
 
-const market = "SE";
-
 enum GamesLists {
   CONSOLE = "f6f1f99f-9b49-4ccd-b3bf-4d9767a77f5e&",
   PC = "fdd9e2a7-0fee-49f6-ad69-4354098401ff&",
   WITHOUT_CONTROLLER = "7d8e8d56-c02f-4711-afec-73a80d8e9261&",
   ALL = "29a81209-df6f-41fd-a528-2ae6b91f719c&",
   EA_PLAY = "b8900d09-a491-44cc-916e-32b5acae621b",
-}
-
-interface GameBeforeOpenCritic {
-  id: string;
-  name: string;
-  images: string[];
-  category: string;
-  categories: string[];
 }
 
 interface OpenCriticData {
@@ -43,57 +32,6 @@ export type Game = GameBeforeOpenCritic &
   OpenCriticData & {
     source: string;
   };
-
-async function getGamesList(list: GamesLists) {
-  const res = await fetch(
-    `https://catalog.gamepass.com/sigls/v2?id=${list}&language=en-us&market=${market}`
-  );
-  const json = (await res.json()) as { id?: string }[];
-  const gameIds = json
-    .filter((game: any) => game.id)
-    .map((game: any) => game.id);
-  return gameIds;
-}
-
-async function getGames(list: string[]): Promise<GameBeforeOpenCritic[]> {
-  const res = await fetch(
-    `https://displaycatalog.mp.microsoft.com/v7.0/products?bigIds=${list
-      .slice(0, 10) // only 10 games from each list for now (faster for testing)
-      .join(",")}&market=${market}&languages=en-us&MS-CV=DGU1mcuYo0WMMp+F.1`
-  );
-  const gamesjson = (await res.json()) as {
-    Products: Product[];
-  };
-  const games = gamesjson.Products.map((game, i) => {
-    const Properties =
-      game.LocalizedProperties.find((prop) => prop.Language === "en") ??
-      game.LocalizedProperties[0];
-    return {
-      id: game.ProductId,
-      name: Properties.ProductTitle,
-      images: Properties.Images.map((image) => "https:" + image.Uri),
-      category: game.Properties.Category,
-      categories: game.Properties.Categories,
-    };
-  });
-  return games;
-}
-
-async function findOpenCriticRating(name: string): Promise<OpenCriticGame> {
-  const baseurl = "https://api.opencritic.com/api";
-  const [bestResult] = (await fetch(
-    baseurl + "/game/search?criteria=" + name
-  ).then((res) => res.json())) as {
-    id: number;
-    name: string;
-    dist: number;
-  }[];
-  const game = await fetch(baseurl + "/game/" + bestResult.id).then((res) =>
-    res.json()
-  );
-
-  return game as OpenCriticGame;
-}
 
 async function fetchAndSaveGames(list: GamesLists, source: string) {
   const gameIds = await getGamesList(list);
@@ -133,12 +71,15 @@ export const onGameCreate = functions.firestore
     console.log("created", context.params, change.data().name);
     const data = change.data();
     const game = await findOpenCriticRating(data.name);
+    if (!game) {
+      return Promise.resolve();
+    }
     const openCriticData: OpenCriticData = {
       opencritic: {
         id: game.id,
-        percentRecommended: game.percentRecommended,
-        averageScore: game.averageScore,
-        medianScore: game.medianScore,
+        percentRecommended: game.percentRecommended ?? -1,
+        averageScore: game.averageScore ?? -1,
+        medianScore: game.medianScore ?? -1,
       },
     };
     await firestore.collection("games").doc(data.id).update(openCriticData);

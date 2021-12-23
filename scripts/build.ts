@@ -1,7 +1,9 @@
 import concurrently from "concurrently";
 import * as path from "path";
+import { generate } from "./swagger";
 
 export async function build() {
+  await generate();
   await concurrently(
     [
       {

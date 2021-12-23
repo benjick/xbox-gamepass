@@ -1,4 +1,4 @@
-import { sorts, useCategories, useStore } from "../src/state";
+import { SortKey, sorts, useCategories, useStore } from "../src/state";
 
 export const Filter: React.FC = () => {
   const { setSort, sort } = useStore((state) => ({
@@ -44,7 +44,7 @@ export const Filter: React.FC = () => {
           name="sortBy"
           className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           value={sort}
-          onChange={(event) => setSort(event.target.value)}
+          onChange={(event) => setSort(event.target.value as SortKey)}
         >
           {Object.entries(sorts).map(([key, value]) => (
             <option key={key} value={key}>

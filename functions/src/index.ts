@@ -34,6 +34,10 @@ interface OpenCriticData {
     percentRecommended: number;
     averageScore: number;
     medianScore: number;
+    rating: {
+      value: string;
+      imageSrc: string;
+    };
   };
 }
 
@@ -135,6 +139,7 @@ export const onGameCreate = functions.firestore
         percentRecommended: game.percentRecommended,
         averageScore: game.averageScore,
         medianScore: game.medianScore,
+        rating: game.Rating,
       },
     };
     await firestore.collection("games").doc(data.id).update(openCriticData);

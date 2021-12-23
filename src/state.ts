@@ -38,7 +38,7 @@ export const useStore = create<State>(
       hidden: [],
       showHidden: false,
       sort: Object.keys(sorts)[0],
-      category: undefined,
+      category: "ALL",
       sorts,
       setSort: async (sort) => {
         set({ sort });
@@ -89,7 +89,7 @@ export const useGames = () => {
     if (!showHidden) {
       sortedGames = sortedGames.filter((game) => !hidden.includes(game.id));
     }
-    if (category) {
+    if (category !== "ALL") {
       sortedGames = sortedGames.filter((game) => game.category === category);
     }
     return sortedGames;

@@ -24,7 +24,7 @@ export const Filter: React.FC = () => {
           value={category}
           onChange={(event) => setCategory(event.target.value)}
         >
-          <option value={undefined}>All categories</option>
+          <option value="ALL">All categories</option>
           {categories.map((_category) => (
             <option key={_category} value={_category}>
               {_category}

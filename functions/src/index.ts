@@ -68,7 +68,6 @@ exports.cronjob = functions.pubsub
 export const onGameCreate = functions.firestore
   .document("games/{gameId}")
   .onCreate(async (change, context) => {
-    console.log("created", context.params, change.data().name);
     const data = change.data();
     const game = await findOpenCriticRating(data.name);
     if (!game) {

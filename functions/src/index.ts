@@ -8,7 +8,9 @@ admin.initializeApp();
 
 const firestore = admin.firestore();
 
-process.env["FIRESTORE_EMULATOR_HOST"] = "localhost:8080";
+if (process.env.USE_EMULATOR) {
+  process.env["FIRESTORE_EMULATOR_HOST"] = "localhost:8080";
+}
 
 const market = "SE";
 
@@ -34,10 +36,6 @@ interface OpenCriticData {
     percentRecommended: number;
     averageScore: number;
     medianScore: number;
-    rating: {
-      value: string;
-      imageSrc: string;
-    };
   };
 }
 
@@ -110,11 +108,13 @@ async function fetchAndSaveGames(list: GamesLists, source: string) {
 
 export const updateGames = functions.https.onRequest(
   async (request, response) => {
-    await fetchAndSaveGames(GamesLists.PC, "xbox-gamepass");
-    await fetchAndSaveGames(GamesLists.EA_PLAY, "ea-play");
+    if (process.env.USE_EMULATOR) {
+      await fetchAndSaveGames(GamesLists.PC, "xbox-gamepass");
+      await fetchAndSaveGames(GamesLists.EA_PLAY, "ea-play");
+    }
 
     response.send({
-      ok: true,
+      ok: !!process.env.USE_EMULATOR,
     });
   }
 );
@@ -139,7 +139,6 @@ export const onGameCreate = functions.firestore
         percentRecommended: game.percentRecommended,
         averageScore: game.averageScore,
         medianScore: game.medianScore,
-        rating: game.Rating,
       },
     };
     await firestore.collection("games").doc(data.id).update(openCriticData);

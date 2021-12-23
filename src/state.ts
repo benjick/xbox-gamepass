@@ -78,7 +78,6 @@ export const useGames = () => {
   }));
 
   return useMemo(() => {
-    console.log("games", games);
     let sortedGames = sorter.sort(games).desc(sort) as unknown as Game[]; // ???
     if (!showHidden) {
       sortedGames = sortedGames.filter((game) => !hidden.includes(game.id));

@@ -3,10 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "ts-node scripts/dev.ts",
-    "dev:frontend": "next dev",
-    "dev:functions": "cd functions && yarn && yarn build:watch",
-    "dev:emulators": "firebase emulators:start",
-    "build": "next build",
+    "build": "ts-node scripts/build.ts",
+    "deploy": "ts-node scripts/deploy.ts",
     "start": "next start",
     "lint": "next lint"
   },

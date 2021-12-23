@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 import sorter from "sort-nested-json";
 import { Game } from "../functions/src";
 import { db } from "./firebase";
+import { useMemo } from "react";
 
 export const sorts = [
   "opencritic.percentRecommended",
@@ -68,9 +69,11 @@ export const useGames = () => {
     showHidden: state.showHidden,
   }));
 
-  let sortedGames = sorter.sort(games).desc(sort) as unknown as Game[]; // ???
-  if (!showHidden) {
-    sortedGames = sortedGames.filter((game) => !hidden.includes(game.id));
-  }
-  return sortedGames;
+  return useMemo(() => {
+    let sortedGames = sorter.sort(games).desc(sort) as unknown as Game[]; // ???
+    if (!showHidden) {
+      sortedGames = sortedGames.filter((game) => !hidden.includes(game.id));
+    }
+    return sortedGames;
+  }, [games, sort, hidden, showHidden]);
 };

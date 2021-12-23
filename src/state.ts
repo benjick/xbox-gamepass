@@ -13,7 +13,7 @@ export const sorts = {
   "opencritic.medianScore": "Median score",
 };
 
-type SortKey = keyof typeof sorts;
+export type SortKey = keyof typeof sorts;
 
 interface State {
   games: Game[];

@@ -1,15 +1,10 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { Product } from "../../types/Products";
-import { OpenCriticGame } from "../../types/Opencritic";
+import { OpenCriticGame } from "../../types/OpenCritic";
 import fetch from "node-fetch";
 
-const serviceAccount = require("/Users/max/dev/xbox-gamepass/functions/src/serviceaccount.json");
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://xbox-gamepass.firebaseio.com",
-});
+admin.initializeApp();
 
 const firestore = admin.firestore();
 

@@ -43,6 +43,9 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Filter />
+      <p>
+        Showing {games.length} {games.length === 1 ? "game" : "games"}
+      </p>
       <div className="container">
         <ul
           role="list"

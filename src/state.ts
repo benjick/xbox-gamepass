@@ -20,26 +20,33 @@ const initialState = {
   games: [] as Game[],
   hidden: [] as string[],
   showHidden: false,
-  sort: Object.keys(sorts)[0] as SortKey,
+  sort: "opencritic.percentRecommended" as SortKey,
   category: "ALL",
   sorts,
+  loading: false,
+  page: 0,
 };
 
 export const useStore = create(
   persist(
     combine(initialState, (set, get) => ({
+      setPage: async (page: number) => {
+        set({ page });
+      },
       setSort: async (sort: SortKey) => {
         set({ sort });
       },
       getGames: async () => {
         const ref = collection(db, "games");
+        set({ loading: true });
+        // const q = query(ref);
         const q = query(ref, orderBy("opencritic.percentRecommended"));
         getDocs(q).then((querySnapshot) => {
           const games: Game[] = [];
           querySnapshot.forEach((doc) => {
             games.push(doc.data() as Game);
           });
-          set({ games });
+          set({ games, loading: false });
         });
       },
       hideGame: async (id: string) => {
@@ -69,7 +76,7 @@ export const useStore = create(
     {
       name: "xbox-gamepass",
       partialize: (state) => ({
-        games: state.games,
+        // games: state.games,
         sort: state.sort,
         hidden: state.hidden,
         category: state.category,
